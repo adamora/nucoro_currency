@@ -1,0 +1,7 @@
+# PostgreSQL
+# ------------------------------------------------------------------------------
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=nucoro_currency
+POSTGRES_USER=WgVVdMoGnAisRWJOnbORQUHykPtVHmli
+POSTGRES_PASSWORD=TqWw33Yb12LUsHLUkqzUvjjavA4GNtP5LrhtFfdyMubiFqf5a2SEPED6jtaKF8c6
