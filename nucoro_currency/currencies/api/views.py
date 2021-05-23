@@ -12,8 +12,9 @@ from rest_framework.viewsets import GenericViewSet
 
 from nucoro_currency.currencies.api.filters import CurrencyExchangeRateFilter
 from nucoro_currency.currencies.api.serializers import CurrencyExchangeRateSerializer, CurrencyExchangeSerializer, \
-    CurrencyExchangeQueryParamsSerializer, TWRQueryParamsSerializer
+    CurrencyExchangeQueryParamsSerializer, TWRQueryParamsSerializer, UploadFileDataSerializer
 from nucoro_currency.currencies.models import CurrencyExchangeRate, Currency, Provider
+from nucoro_currency.currencies.tasks import bulk_exchange_data_creation
 from nucoro_currency.currencies.utils.clients.currencies_methods import CurrenciesMethods
 from nucoro_currency.currencies.utils.commons import twr_formula
 
@@ -89,10 +90,6 @@ class CalculateExchangeView(ExtendedGenericViewSet, mixins.ListModelMixin):
     required_query_params_serializer_class = CurrencyExchangeQueryParamsSerializer
 
     def list(self, request, *args, **kwargs):
-        """
-        Service that Calculates (latest) amount in a currency exchanged into a different currency.
-        URL example: http://localhost:8000/api/v1/calculate-exchange?source_currency=EUR&exchanged_currency=USD&amount=100
-        """
         instance = self.currency_client.get_latest_exchange_rate(
             from_currency=request.GET['source_currency'],
             to_currency=request.GET['exchanged_currency'],
@@ -132,3 +129,14 @@ class TWRView(ExtendedGenericViewSet, mixins.ListModelMixin):
             "twr": round(data, 6),
             "twr_percentage": f"{round(data * 100, 6)}%"
         })
+
+
+class UploadFileDataView(GenericViewSet, mixins.CreateModelMixin):
+    queryset = CurrencyExchangeRate.objects.all()
+    serializer_class = UploadFileDataSerializer
+    permission_classes = [AllowAny]
+
+    def perform_create(self, serializer):
+        decoded_file = serializer.validated_data['file'].read().decode('utf-8')
+        bulk_exchange_data_creation(decoded_file)
+

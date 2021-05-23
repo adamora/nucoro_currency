@@ -1,0 +1,3 @@
+source_currency,exchanged_currency,valuation_date,rate_value
+EUR,USD,2021-05-24,"1,001212"
+EUR,USD,2021-05-25,"1,001212"
