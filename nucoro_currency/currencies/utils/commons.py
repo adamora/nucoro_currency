@@ -1,4 +1,5 @@
 import datetime
+import random
 import typing
 
 
@@ -12,3 +13,7 @@ def twr_formula(initial_rate, final_rate, amount, input=0, refund=0):
     initial_value = amount * initial_rate
     final_value = amount * final_rate
     return (final_value - initial_value + refund - input) / initial_value
+
+
+def random_color():
+    return f"#{''.join([random.choice('0123456789ABCDEF') for j in range(6)])}"

@@ -1,6 +1,7 @@
 import datetime
 import typing
 from decimal import Decimal
+
 from django.conf import settings
 from django.db.models import QuerySet
 
@@ -10,11 +11,11 @@ from nucoro_currency.currencies.utils.interfaces.currencies import CurrenciesInt
 
 
 class CurrenciesMethods(object):
-    client = None
+    adapter = None
 
-    def __init__(self, client: CurrenciesInterface) -> None:
+    def __init__(self, adapter: CurrenciesInterface) -> None:
         super().__init__()
-        self.client = client
+        self.adapter = adapter
 
     @staticmethod
     def _create_instance(data):
@@ -31,7 +32,8 @@ class CurrenciesMethods(object):
                                   date: datetime.date) -> CurrencyExchangeRate:
         assert from_currency.upper() in settings.AVAILABLE_CURRENCIES
         assert to_currency.upper() in settings.AVAILABLE_CURRENCIES
-        data = self.client.get_exchange_rate_by_date(from_currency, to_currency, date)
+        data = self.adapter.get_exchange_rate_by_date(
+            from_currency=from_currency, to_currency=to_currency, date=date)
         return self._create_instance(data)
 
     def get_exchange_rates_by_date_range(self, from_currency: str, date_from: datetime.date,
@@ -39,12 +41,13 @@ class CurrenciesMethods(object):
         assert (type(date_from) == datetime.date) and (type(date_to) == datetime.date)
         id_list = []
         for to_currency in settings.AVAILABLE_CURRENCIES:
-            id_list += [self.get_exchange_rate_by_date(from_currency, to_currency, date).id
+            id_list += [self.get_exchange_rate_by_date(
+                            from_currency=from_currency, to_currency=to_currency, date=date).id
                         for date in get_dates_between_dates(date_from, date_to)]
         return CurrencyExchangeRate.objects.filter(id__in=set(id_list))
 
     def get_all_latest_exchange_rates(self, from_currency: str) -> typing.Union[QuerySet, typing.List[CurrencyExchangeRate]]:
-        data = self.client.get_all_latest_exchange_rates(from_currency)
+        data = self.adapter.get_all_latest_exchange_rates(from_currency)
         id_list = [self._create_instance(i).id for i in data]
         return CurrencyExchangeRate.objects.filter(id__in=set(id_list))
 
