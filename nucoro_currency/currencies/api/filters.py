@@ -11,13 +11,3 @@ class CurrencyExchangeRateFilter(django_filters.rest_framework.FilterSet):
         model = CurrencyExchangeRate
         fields = ["source_currency"]
 
-
-class CalculateExchangeFilter(django_filters.rest_framework.FilterSet):
-    source_currency = django_filters.ChoiceFilter(choices=Currency.objects.values_list("code", "name"))
-    exchanged_currency = django_filters.ChoiceFilter(choices=Currency.objects.values_list("code", "name"))
-    amount = django_filters.NumberFilter()
-
-    def filter_queryset(self, queryset):
-        """Avoid any filter options"""
-        return queryset
-

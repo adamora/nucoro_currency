@@ -31,4 +31,8 @@ class CurrencyExchangeSerializer(CurrencyExchangeRateSerializer):
 class CurrencyExchangeQueryParamsSerializer(serializers.Serializer):
     source_currency = serializers.ChoiceField(required=True, choices=Currency.objects.all().values_list("code", "code"))
     exchanged_currency = serializers.ChoiceField(required=True, choices=Currency.objects.all().values_list("code", "code"))
-    amount = serializers.FloatField(required=True)
+    amount = serializers.DecimalField(required=True, decimal_places=6, max_digits=999999999)
+
+
+class TWRQueryParamsSerializer(CurrencyExchangeQueryParamsSerializer):
+    date = serializers.DateField(required=True)

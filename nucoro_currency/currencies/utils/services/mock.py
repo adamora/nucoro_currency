@@ -2,7 +2,7 @@ import datetime
 import random
 import typing
 
-from config import settings
+from nucoro_currency.currencies.models import Currency
 
 
 class MockClient(object):
@@ -30,6 +30,6 @@ class MockClient(object):
                 'valuation_date': datetime.today().strftime("%Y-%m-%d"),
                 'rate_value': self._get_random_rate_value()
             }
-            for currency in settings.PROVIDER
+            for currency in Currency.objects.all().values_list("code", flat=True)
         ]
         return data

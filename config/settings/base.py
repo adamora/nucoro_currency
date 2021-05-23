@@ -317,7 +317,4 @@ CORS_URLS_REGEX = r"^/api/.*$"
 # Currencies
 # ------------------------------------------------------------------------------
 AVAILABLE_CURRENCIES = ["EUR", "CHF", "USD", "GBP"]
-PROVIDERS = {
-    'Fixer': "nucoro_currency.currencies.utils.adapters.fixer.FixerAdapter",
-    'Mock': "nucoro_currency.currencies.utils.adapters.mock.MockAdapter",
-}
+DEFAULT_PROVIDER = "fixer"
