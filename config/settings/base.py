@@ -318,3 +318,4 @@ CORS_URLS_REGEX = r"^/api/.*$"
 # ------------------------------------------------------------------------------
 AVAILABLE_CURRENCIES = ["EUR", "CHF", "USD", "GBP"]
 DEFAULT_PROVIDER = "fixer"
+FIXER_ACCESS_KEY = env.get_value("FIXER_ACCESS_KEY")

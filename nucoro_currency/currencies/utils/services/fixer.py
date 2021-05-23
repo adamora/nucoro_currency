@@ -7,7 +7,7 @@ from django.conf import settings
 
 class FixerClient(object):
     base_url = "http://data.fixer.io/api/"
-    access_key = getattr(settings, "FIXER_ACCESS_KEY", "ca25f484f3b4e3bbbd14d80c2c934e15")
+    access_key = settings.FIXER_ACCESS_KEY
     path = None
     extra_params = None
 
