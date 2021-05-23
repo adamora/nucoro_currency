@@ -1,4 +1,7 @@
+from django.conf import settings
 from django.db import models
+
+from nucoro_currency.currencies.validators import validate_provider_path
 
 
 class Currency(models.Model):
@@ -20,8 +23,21 @@ class CurrencyExchangeRate(models.Model):
     rate_value = models.DecimalField(db_index=True, decimal_places=6, max_digits=18)
 
 
+class ProviderManager(models.Manager):
+    def get_default(self):
+        queryset = self.filter(default=True)
+        if queryset.exists():
+            return queryset.last()
+        return self.get(slug=settings.DEFAULT_PROVIDER)
+
+
 class Provider(models.Model):
     name = models.CharField(max_length=20, db_index=True, help_text="Provider name")
     slug = models.SlugField(unique=True, help_text="Unique slug identifier for a provider")
-    path = models.CharField(max_length=250, help_text="Path to a provider adapter class")
+    path = models.CharField(
+        max_length=250, help_text="Path to a provider adapter class",
+        validators=[validate_provider_path]
+    )
     default = models.BooleanField(default=False, help_text="Provider priority")
+
+    objects = ProviderManager()

@@ -10,22 +10,23 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from nucoro_currency.currencies.api.filters import CurrencyExchangeRateFilter, CalculateExchangeFilter
+from nucoro_currency.currencies.api.filters import CurrencyExchangeRateFilter
 from nucoro_currency.currencies.api.serializers import CurrencyExchangeRateSerializer, CurrencyExchangeSerializer, \
-    CurrencyExchangeQueryParamsSerializer
-from nucoro_currency.currencies.models import CurrencyExchangeRate, Currency
+    CurrencyExchangeQueryParamsSerializer, TWRQueryParamsSerializer
+from nucoro_currency.currencies.models import CurrencyExchangeRate, Currency, Provider
 from nucoro_currency.currencies.utils.clients.currencies_methods import CurrenciesMethods
+from nucoro_currency.currencies.utils.commons import twr_formula
 
 
 class ExtendedGenericViewSet(GenericViewSet):
     required_query_params = None
-    required_query_params_serializer = None
+    required_query_params_serializer_class = None
+    required_query_params_serializer = None  # This attr sets automatically
 
-    provider = "Fixer"
     currency_client = None
 
     def _set_currency_client(self):
-        klass = locate(settings.PROVIDERS[self.provider])
+        klass = locate(Provider.objects.get_default().path)
         self.currency_client = CurrenciesMethods(klass())
 
     def __init__(self, **kwargs: Any) -> None:
@@ -38,8 +39,10 @@ class ExtendedGenericViewSet(GenericViewSet):
         not_filled_attrs = [i for i in self.required_query_params or list() if not query_obj.get(i)]
         if not_filled_attrs:
             raise ValidationError({i: ["This query param is required"] for i in not_filled_attrs})
-        if self.required_query_params_serializer:
-            self.required_query_params_serializer(data=self.request.GET).is_valid(raise_exception=True)
+        if self.required_query_params_serializer_class:
+            serializer = self.required_query_params_serializer_class(data=self.request.GET)
+            serializer.is_valid(raise_exception=True)
+            self.required_query_params_serializer = serializer
 
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
@@ -81,10 +84,9 @@ class CalculateExchangeView(ExtendedGenericViewSet, mixins.ListModelMixin):
     queryset = CurrencyExchangeRate.objects.all()
     serializer_class = CurrencyExchangeSerializer
     permission_classes = [AllowAny]
-    filterset_class = CalculateExchangeFilter
 
     required_query_params = ['source_currency', 'exchanged_currency', 'amount']
-    required_query_params_serializer = CurrencyExchangeQueryParamsSerializer
+    required_query_params_serializer_class = CurrencyExchangeQueryParamsSerializer
 
     def list(self, request, *args, **kwargs):
         """
@@ -98,3 +100,35 @@ class CalculateExchangeView(ExtendedGenericViewSet, mixins.ListModelMixin):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
+
+class TWRView(ExtendedGenericViewSet, mixins.ListModelMixin):
+    """
+    Service to retrieve time-weighted rate of return for any given amount invested from a currency into another one from given date until today:
+    URL example: http://localhost:8000/api/v1/calculate-exchange?source_currency=EUR&exchanged_currency=USD&amount=100
+    """
+    queryset = CurrencyExchangeRate.objects.all()
+    serializer_class = CurrencyExchangeSerializer
+    permission_classes = [AllowAny]
+
+    required_query_params = ['source_currency', 'exchanged_currency', 'amount', 'date']
+    required_query_params_serializer_class = TWRQueryParamsSerializer
+
+    def list(self, request, *args, **kwargs):
+        query_params = self.required_query_params_serializer.validated_data
+        initial_instance = self.currency_client.get_exchange_rate_by_date(
+            from_currency=query_params['source_currency'],
+            to_currency=query_params["exchanged_currency"],
+            date=query_params["date"]
+        )
+        final_instance = self.currency_client.get_latest_exchange_rate(
+            from_currency=query_params['source_currency'],
+            to_currency=query_params["exchanged_currency"],
+        )
+        data = twr_formula(
+            initial_rate=initial_instance.rate_value, final_rate=final_instance.rate_value,
+            amount=query_params['amount']
+        )
+        return Response({
+            "twr": round(data, 6),
+            "twr_percentage": f"{round(data * 100, 6)}%"
+        })
