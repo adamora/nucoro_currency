@@ -12,7 +12,7 @@ class MockAdapter(CurrenciesInterface):
         self.service = service or MockClient()
 
     def get_exchange_rate_by_date(self, from_currency: str, to_currency: str, date: datetime.date) -> typing.Dict:
-        return self.serivice.get_exchange_rate_by_date(from_currency, to_currency, date)
+        return self.service.get_exchange_rate_by_date(from_currency, to_currency, date)
 
     def get_all_latest_exchange_rates(self, from_currency: str) -> typing.List[typing.Dict]:
-        return self.serivice.get_all_latest_exchange_rates(from_currency)
+        return self.service.get_all_latest_exchange_rates(from_currency)
