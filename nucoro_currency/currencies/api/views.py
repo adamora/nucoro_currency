@@ -138,5 +138,4 @@ class UploadFileDataView(GenericViewSet, mixins.CreateModelMixin):
 
     def perform_create(self, serializer):
         decoded_file = serializer.validated_data['file'].read().decode('utf-8')
-        bulk_exchange_data_creation(decoded_file)
-
+        bulk_exchange_data_creation.apply_async((decoded_file, ))
