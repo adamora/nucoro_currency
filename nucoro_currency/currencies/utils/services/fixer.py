@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 import requests
 import requests_cache
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 
 class FixerClient(object):
@@ -23,9 +24,13 @@ class FixerClient(object):
             session = requests_cache.CachedSession('fixerio_cache')
         else:
             session = requests.Session()
-        return session.get(self.get_url(), params=self.get_params())
+        response = session.get(self.get_url(), params=self.get_params())
+        if not response.json()['success']:
+            raise ValidationError(response.content)
+        return response
 
     def latest(self, base=None, symbols=None):
+        assert base == "EUR", ValidationError("Only source currency 'EUR' available in Fixer.io")
         assert not symbols or type(symbols) == list
         self.path = "latest"
         if base:
@@ -38,6 +43,7 @@ class FixerClient(object):
         return response.json()
 
     def historical(self, date, base=None, symbols=None):
+        assert base == "EUR", ValidationError("Only source currency 'EUR' available in Fixer.io")
         assert not symbols or type(symbols) == list
         assert type(date) == datetime.date
         self.path = date.strftime("%Y-%m-%d")
