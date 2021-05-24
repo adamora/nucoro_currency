@@ -1,6 +1,7 @@
 import datetime
 from urllib.parse import urljoin
 
+import requests
 import requests_cache
 from django.conf import settings
 
@@ -17,8 +18,11 @@ class FixerClient(object):
     def get_params(self):
         return {**{'access_key': self.access_key}, **(self.extra_params or {})}
 
-    def call(self):
-        session = requests_cache.CachedSession('fixerio_cache')
+    def call(self, cache=True):
+        if cache:
+            session = requests_cache.CachedSession('fixerio_cache')
+        else:
+            session = requests.Session()
         return session.get(self.get_url(), params=self.get_params())
 
     def latest(self, base=None, symbols=None):
@@ -30,7 +34,7 @@ class FixerClient(object):
             pass
         if symbols:
             self.extra_params = {**(self.extra_params or {}), **{'symbols': ",".join(symbols)}}
-        response = self.call()
+        response = self.call(cache=False)
         return response.json()
 
     def historical(self, date, base=None, symbols=None):
