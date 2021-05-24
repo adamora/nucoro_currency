@@ -15,7 +15,7 @@ class ExchangeRateEvolutionView(TemplateView):
     queryset = CurrencyExchangeRate.objects.all()
 
     def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
-        days = int(self.request.GET.get("days", 7))
+        days = int(self.request.GET.get("days", 7)) - 1
         currency_client = CurrenciesMethods(locate(Provider.objects.get_default().path)())
         now = datetime.date.today()
         date_from = now - datetime.timedelta(days=days)

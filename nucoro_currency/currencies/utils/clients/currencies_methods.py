@@ -19,6 +19,11 @@ class CurrenciesMethods(object):
 
     @staticmethod
     def _create_instance(data):
+        """
+        Get or create instance based on data argument
+        :param data: Dict data with safe values for CurrencyExchangeRate
+        :return: CurrencyExchangeRate instance
+        """
         required_fields = ['source_currency', 'exchanged_currency', 'valuation_date', 'rate_value']
         assert type(data) == dict and set(data.keys()) == set(required_fields)
         assert type(data['rate_value']) == Decimal
@@ -30,6 +35,9 @@ class CurrenciesMethods(object):
 
     def get_exchange_rate_by_date(self, from_currency: str, to_currency: str,
                                   date: datetime.date) -> CurrencyExchangeRate:
+        """
+        Get exchanged rate value between declared currencies in a concrete date
+        """
         assert from_currency.upper() in settings.AVAILABLE_CURRENCIES
         assert to_currency.upper() in settings.AVAILABLE_CURRENCIES
         data = self.adapter.get_exchange_rate_by_date(
@@ -38,6 +46,9 @@ class CurrenciesMethods(object):
 
     def get_exchange_rates_by_date_range(self, from_currency: str, date_from: datetime.date,
                                          date_to: datetime.date) -> CurrencyExchangeRate:
+        """
+        Get exchanged rate value between declared currencies in a range of dates
+        """
         assert (type(date_from) == datetime.date) and (type(date_to) == datetime.date)
         id_list = []
         for to_currency in settings.AVAILABLE_CURRENCIES:
@@ -47,11 +58,17 @@ class CurrenciesMethods(object):
         return CurrencyExchangeRate.objects.filter(id__in=set(id_list))
 
     def get_all_latest_exchange_rates(self, from_currency: str) -> typing.Union[QuerySet, typing.List[CurrencyExchangeRate]]:
+        """
+        Get last rate value between declared currency to all available currencies
+        """
         data = self.adapter.get_all_latest_exchange_rates(from_currency)
         id_list = [self._create_instance(i).id for i in data]
         return CurrencyExchangeRate.objects.filter(id__in=set(id_list))
 
     def get_latest_exchange_rate(self, from_currency: str, to_currency: str) -> CurrencyExchangeRate:
+        """
+        Get last rate value between declared currencies
+        """
         assert from_currency.upper() in settings.AVAILABLE_CURRENCIES
         assert to_currency.upper() in settings.AVAILABLE_CURRENCIES
         queryset = self.get_all_latest_exchange_rates(from_currency=from_currency)
