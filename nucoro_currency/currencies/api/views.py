@@ -2,9 +2,7 @@ import datetime
 from pydoc import locate
 from typing import Any
 
-from django.conf import settings
 from rest_framework import mixins
-from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -51,7 +49,10 @@ class ExtendedGenericViewSet(GenericViewSet):
 
 
 class CurrencyExchangeRateView(ExtendedGenericViewSet, mixins.ListModelMixin):
-    """Service to retrieve a List of currency rates for a specific time period"""
+    """
+    Service to retrieve a List of currency rates for a specific time period
+    URL example: http://localhost:8000/api/v1/currency-exchange-rates?source_currency=1&date_from=2021-05-21&date_to=2021-05-22
+    """
     serializer_class = CurrencyExchangeRateSerializer
     queryset = CurrencyExchangeRate.objects.all()
     permission_classes = (AllowAny, )
@@ -89,6 +90,7 @@ class CalculateExchangeView(ExtendedGenericViewSet, mixins.ListModelMixin):
     required_query_params = ['source_currency', 'exchanged_currency', 'amount']
     required_query_params_serializer_class = CurrencyExchangeQueryParamsSerializer
 
+    # Better using @action decorator, but it does not document on API ROOT
     def list(self, request, *args, **kwargs):
         instance = self.currency_client.get_latest_exchange_rate(
             from_currency=request.GET['source_currency'],
@@ -101,7 +103,7 @@ class CalculateExchangeView(ExtendedGenericViewSet, mixins.ListModelMixin):
 class TWRView(ExtendedGenericViewSet, mixins.ListModelMixin):
     """
     Service to retrieve time-weighted rate of return for any given amount invested from a currency into another one from given date until today:
-    URL example: http://localhost:8000/api/v1/calculate-exchange?source_currency=EUR&exchanged_currency=USD&amount=100
+    URL example: http://localhost:8000/api/v1/twr?source_currency=EUR&exchanged_currency=USD&amount=100&date=2021-05-21
     """
     queryset = CurrencyExchangeRate.objects.all()
     serializer_class = CurrencyExchangeSerializer
@@ -110,6 +112,7 @@ class TWRView(ExtendedGenericViewSet, mixins.ListModelMixin):
     required_query_params = ['source_currency', 'exchanged_currency', 'amount', 'date']
     required_query_params_serializer_class = TWRQueryParamsSerializer
 
+    # Better using @action decorator, but it does not document on API ROOT
     def list(self, request, *args, **kwargs):
         query_params = self.required_query_params_serializer.validated_data
         initial_instance = self.currency_client.get_exchange_rate_by_date(
@@ -132,6 +135,10 @@ class TWRView(ExtendedGenericViewSet, mixins.ListModelMixin):
 
 
 class UploadFileDataView(GenericViewSet, mixins.CreateModelMixin):
+    """
+    Batch procedure to retrieve exchange rates.
+    Mechanism to ingest real-ish exchange rate data from a file in any format
+    """
     queryset = CurrencyExchangeRate.objects.all()
     serializer_class = UploadFileDataSerializer
     permission_classes = [AllowAny]
